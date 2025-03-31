@@ -1,0 +1,134 @@
+---
+title: "Visualizing AIES check-in response rates"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+    vertical_layout: scroll
+params:
+  dfs: NULL
+  
+---
+
+```{r setup, include=FALSE, echo = FALSE}
+library(flexdashboard)
+library(dplyr)
+library(plotly)
+library(tidyr)
+```
+
+```{r echo = FALSE, warning = FALSE}
+# Assign dfs into variables
+for (name in names(dfs)) {
+  assign(name, dfs[[name]])
+}
+```
+
+```{r echo = FALSE, include = FALSE}
+# Define path to the folder that contains all of the functions
+folder_path <- "./dashboards/check_in_response_dashboard/utils"
+
+# Define module names
+file_names <- c("create_graphs.R", "create_valueboxes.R", "get_query.R", "proc ss_data.R")
+
+# Import all of the functions from these modules
+for (file in file_names) {
+  connection <- file.path(folder_path, file)
+  source(connection)
+}
+```
+# Check in Response Summaries
+## Row
+### Checked-In (login_ids submitted their survey)
+```{r echo = FALSE}
+checkin_count <- return_check_in_count(general_df, "Checked in")
+
+create_valueboxes_checkin(checkin_count, "Checked in")
+```
+### Not Checked-In (login_ids didn't submitted their survey)
+```{r echo = FALSE}
+not_checkin_count <- return_check_in_count(general_df, "Not checked in")
+
+create_valueboxes_checkin(not_checkin_count, "Not checked in")
+```
+## Row
+```{r echo = FALSE, include = FALSE}
+# Create a time series data
+time_series_data <- create_time_series_data(general_df)
+```
+### Fig. 1
+```{r echo = FALSE, warning = FALSE}
+# Time series graph
+fig <- create_time_series_graph(time_series_data)
+
+fig
+```
+## Row 
+### Fig. 2
+```{r echo = FALSE}
+# Create df that groups login ids by ent_typ
+ent_typ_data <- aggregate_by_ent_typ(general_df)
+
+# Treemap graph
+fig <- MU_SU_treemap_graph(ent_typ_data)
+
+fig
+```
+### Fig. 3
+```{r echo = FALSE}
+# Filter data to only have SUs and break it down by check_in_group
+only_SUs <- aggregate_by_checkin_and_ent_typ(general_df, "SU")
+
+# Graph
+fig <- ent_typ_check_in_breakdown_graph(only_SUs, "SU")
+
+fig
+```
+## Row
+### Fig. 4
+```{r echo = FALSE}
+# Filter data to only have MUs and break it down by check_in_group
+only_MUs <- aggregate_by_checkin_and_ent_typ(general_df, "MU")
+
+# Graph
+fig <- ent_typ_check_in_breakdown_graph(only_MUs, "MU")
+
+fig
+```
+### Fig. 5
+```{r echo = FALSE, warning = FALSE}
+# Breaks MUs down by ent_size
+data_breakdown_ent_size <- aggregate_by_ent_size(general_df)
+
+# Graph
+fig <- ent_size_breakdown_graph(data_breakdown_ent_size)
+
+fig
+```
+## Row
+### Fig. 6
+```{r echo = FALSE}
+# Add checkin group to survey
+labeled_checkin <- label_checkin_group_for_data(check_in_df)
+
+# Calculate check in perc for survey
+dist_checkin <- calc_perc_check_in(labeled_checkin)
+
+# Calculate check in perc for AIES
+aies_dist_checkin <- calc_perc_check_in_aies(general_df)
+
+# Graph
+fig <- comparison_graph(aies_dist_checkin, dist_checkin)
+
+fig
+```
+## Row
+### Fig. 7
+```{r echo = FALSE}
+# Calculate distribution of auth_status in data
+auth_status_breakdown_df <- auth_status_breakdown(auth_burn, general_df)
+
+# Graph
+fig <- auth_status_breakdown_graph(auth_status_breakdown_df)
+
+fig
+```

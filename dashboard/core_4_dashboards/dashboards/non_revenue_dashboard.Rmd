@@ -1,0 +1,178 @@
+---
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+    vertical_layout: scroll
+params:
+  variable_name: "default"
+  variable: rcpt_tot_val
+  dfs: NULL
+  title: default
+---
+
+---
+title: "`r params$title`"
+---
+```{r setup, include=FALSE, echo = FALSE}
+library(flexdashboard)
+library(dplyr)
+library(plotly)
+library(tidyr)
+library(data.table)
+```
+
+``` {r echo = FALSE}
+# Assign dataframes into variables with the same name
+for (name in names(dfs)) {
+  assign(name, dfs[[name]])
+}
+
+variable <- params$variable
+variable_name <- params$variable_name
+```
+
+```{r echo = FALSE, include = FALSE}
+# Define path to the folder that contains all of the functions
+folder_path <- "./dashboards/core_4_dashboards/utils"
+# Define module names
+file_names <- c("create_graphs.R", "create_valueboxes.R", "get_query.R", "process_data.R")
+
+# Import all of the functions from these modules
+for (file in file_names) {
+  connection <- file.path(folder_path, file)
+  source(connection)
+}
+```
+# Establishment Response Summaries
+## Row 
+```{r echo = FALSE}
+# Partition the data into response groups and check in groups and count login ids per group
+valueboxes_df <- create_valuebox_df(estab_general, "estab", params, general_df)
+checked_in_valueboxes_df <- valueboxes_df %>% filter(check_in_group == "Checked in")
+not_checked_in_valueboxes_df <- valueboxes_df %>% filter(check_in_group == "Not checked in")
+```
+### 
+```{r echo = FALSE}
+total_checked_in_count_estab <- return_check_in_count_for_valuebox(checked_in_valueboxes_df)
+
+create_valueboxes_general_checkin(total_checked_in_count_estab, "Checked in")
+```
+
+## Row
+###
+```{r echo = FALSE}
+
+all_responded_count_checked_in <- checked_in_valueboxes_df %>%
+  filter(group == "Responded") %>%
+  pull(login_count)
+
+create_valueboxes_resp_group(all_responded_count_checked_in, "Checked in", "Responded", "establishments", params)
+
+```
+### 
+```{r echo = FALSE}
+
+partial_responded_count_checked_in <- checked_in_valueboxes_df %>%
+  filter(group == "Partial") %>%
+  pull(login_count)
+
+create_valueboxes_resp_group(partial_responded_count_checked_in, "Checked in", "Partial", "establishments", params)
+
+```
+###
+```{r echo = FALSE}
+
+zero_responded_count_checked_in <- checked_in_valueboxes_df %>%
+  filter(group == "All responded as zero") %>%
+  pull(login_count)
+
+create_valueboxes_resp_group(zero_responded_count_checked_in, "Checked in", "All responded as zero", "establishments", params)
+
+```
+### 
+```{r echo = FALSE}
+
+NA_responded_count_checked_in <- checked_in_valueboxes_df %>%
+  filter(group == "All responded as NA") %>%
+  pull(login_count)
+
+create_valueboxes_resp_group(NA_responded_count_checked_in, "Checked in", "All responded as NA", "establishments", params)
+
+```
+## Row
+### Fig. 1
+```{r echo = FALSE}
+# Process the data before feeding in to the graph
+naics_graph_df <- process_data_for_naics_graph(estab_general, "estab", "Checked in", params, general_df)
+
+naics_graph_df <- naics_graph_df %>% filter(check_in_group == "Checked in")
+
+# Create a NAICS sector breakdown graph
+fig <- create_NAICS_breakdown_graph(naics_graph_df)
+
+fig
+```
+## Row
+###
+```{r echo = FALSE}
+total_not_checked_in_count_estab <- return_check_in_count_for_valuebox(not_checked_in_valueboxes_df)
+
+create_valueboxes_general_checkin(total_not_checked_in_count_estab, "Not checked in")
+
+```
+## Row
+### 
+```{r echo = FALSE}
+
+all_responded_count_not_checked_in <- not_checked_in_valueboxes_df %>%
+  filter(group == "Responded") %>%
+  pull(login_count)
+
+create_valueboxes_resp_group(all_responded_count_not_checked_in, "Not checked in", "Responded", "establishments", params)
+
+```
+### 
+```{r echo = FALSE}
+
+partial_responded_count_not_checked_in <- not_checked_in_valueboxes_df %>%
+  filter(group == "Partial") %>%
+  pull(login_count)
+
+
+create_valueboxes_resp_group(partial_responded_count_not_checked_in, "Not checked in", "Partial", "establishments", params)
+
+```
+### 
+```{r echo = FALSE}
+
+zero_responded_count_not_checked_in <- not_checked_in_valueboxes_df %>%
+  filter(group == "All responded as zero") %>%
+  pull(login_count)
+
+create_valueboxes_resp_group(zero_responded_count_not_checked_in, "Not checked in", "All responded as zero", "establishments", params)
+
+```
+### 
+```{r echo = FALSE}
+
+NA_responded_count_not_checked_in <- not_checked_in_valueboxes_df %>%
+  filter(group == "All responded as NA") %>%
+  pull(login_count)
+
+
+create_valueboxes_resp_group(NA_responded_count_not_checked_in, "Not checked in", "All responded as NA", "establishments", params)
+
+```
+## Row
+### Fig. 2
+```{r echo = FALSE}
+# Process the data before feeding in to the graph
+naics_graph_df <- process_data_for_naics_graph(estab_general, "estab", "Not checked in", params, general_df)
+
+naics_graph_df <- naics_graph_df %>% filter(check_in_group == "Not checked in")
+
+# Create a NAICS sector breakdown graph
+fig <- create_NAICS_breakdown_graph(naics_graph_df)
+
+fig
+```
